@@ -1,11 +1,13 @@
-import os
-from flask import Flask, request, jsonify, abort
-from sqlalchemy import exc
 import json
-from flask_cors import CORS
+import os
 
-from .database.models import db_drop_and_create_all, setup_db, Drink
+from flask import Flask, abort, jsonify, request
+from flask_cors import CORS
+from icecream import ic
+from sqlalchemy import exc
+
 from .auth.auth import AuthError, requires_auth
+from .database.models import Drink, db_drop_and_create_all, setup_db
 
 app = Flask(__name__)
 setup_db(app)
@@ -16,7 +18,7 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -36,7 +38,8 @@ def get_drinks():
             'success': True,
             'drinks': drinks
         })
-    except Exception:
+    except Exception as e:
+        ic(e)
         abort(400)
 
 '''
@@ -48,15 +51,17 @@ def get_drinks():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks-detail', methods=['GET'])
+@requires_auth(permission='get:drinks-detail')
 def get_drinks_detail():
     try:
         rawDrinks = Drink.query.all()
-        drinks = [rawDrinks.long() for rawDrink in rawDrinks]
+        drinks = [rawDrink.long() for rawDrink in rawDrinks]
         return jsonify({
             'success': True,
             'drinks': drinks
         })
-    except Exception:
+    except Exception as e:
+        ic(e)
         abort(400)
 
 
@@ -70,16 +75,18 @@ def get_drinks_detail():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks', methods=['POST'])
+@requires_auth(permission='post:drinks')
 def insert_drink():
     try:
         data = request.get_json()
-        newDrink = Drink(title=data['title'], recipe=data['recipe'])
+        newDrink = Drink(title=data['title'], recipe=json.dumps(data['recipe']))
         newDrink.insert()
         return jsonify({
             'success': True,
             'drinks': [newDrink.long()]
         })
-    except Exception:
+    except Exception as e:
+        ic(e)
         Drink.rollback(None)
         abort(400)
 
@@ -95,19 +102,22 @@ def insert_drink():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<id>', methods=['PATCH'])
+@requires_auth(permission='patch:drinks')
 def patch_drink(id):
+    drink = Drink.query.get(id)
     try:
-        drink = Drink.query.get(id)
-        if not drink:
-            abort(404)
         data = request.get_json()
-        drink.title = data['title']
-        drink.recipe = data['recipe']
+        if "title" in data:
+            drink.title = data['title']
+        if "recipe" in data:
+            drink.recipe = data['recipe']
+        drink.update()
         return jsonify({
             'success': True,
             'drinks': [drink.long()]
             })
-    except Exception:
+    except Exception as e:
+        ic(e)
         abort(400)
     
 
@@ -122,11 +132,10 @@ def patch_drink(id):
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks/<id>', methods=['DELETE'])
+@requires_auth(permission='delete:drinks')
 def delete_drink(id):
+    drink = Drink.query.get(id)
     try:
-        drink = Drink.query.get(id)
-        if not drink:
-            abort(404)
         drink.delete()
         return jsonify({
             'success': True,
@@ -211,3 +220,10 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+@app.errorhandler(AuthError)
+def autherror(error):
+    return jsonify({
+                    "success": False, 
+                    "error": 401,
+                    "message": "unauthorized"
+                    }), 401
