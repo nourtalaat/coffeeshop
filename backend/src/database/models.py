@@ -91,6 +91,9 @@ class Drink(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    def rollback(self):
+        db.session.rollback()
+
     '''
     update()
         updates a new model into a database
