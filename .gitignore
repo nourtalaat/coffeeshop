@@ -1,7 +1,8 @@
-venv/
+backend/venv/
 .vscode/
 __pycache__/
 test.db
+frontend/node_modules
 
 # OS generated files #
 ######################
