@@ -73,13 +73,13 @@ Base URL: `localhost:5000`
 		{
 			'success': true,
 			'drinks': [
-							{
-								'id': int,
-								'title': str,
-								'recipe': list
-							},
-							...
-						]
+						{
+							'id': int,
+							'title': str,
+							'recipe': list
+						},
+						...
+					  ]
 		}
 		```
 
@@ -92,13 +92,13 @@ Base URL: `localhost:5000`
 		{
 			'success': true,
 			'drinks': [
-							{
-								'id': int,
-								'title': str,
-								'recipe': json
-							},
-							...
-						]
+						{
+							'id': int,
+							'title': str,
+							'recipe': json
+						},
+						...
+					  ]
 		}
 		```
 
@@ -132,7 +132,7 @@ Base URL: `localhost:5000`
 							'title': str,
 							'recipe': json
 						}
-					]
+					  ]
 		}
 		```
 
